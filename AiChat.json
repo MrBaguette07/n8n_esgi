@@ -1,16 +1,16 @@
 {
-  "name": "AiChat",
+  "name": "AIChat",
   "nodes": [
     {
       "parameters": {
         "options": {}
       },
-      "id": "5f506916-2909-4628-984f-d3be63f8a647",
+      "id": "90c87df0-91e7-4cfc-8aa4-a4a399d33d44",
       "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "position": [
-        1888,
-        128
+        -496,
+        3408
       ],
       "webhookId": "ebdeba3f-6b4f-49f3-ba0a-8253dd226161",
       "typeVersion": 1.1
@@ -21,12 +21,12 @@
         "height": 473,
         "width": 485
       },
-      "id": "4f012941-03e3-4f61-8761-ac596248c78e",
+      "id": "037304fb-7b94-4e60-90dd-2b559912aa4e",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        0,
-        0
+        -1056,
+        3472
       ],
       "typeVersion": 1
     },
@@ -37,33 +37,14 @@
         "width": 368,
         "color": 6
       },
-      "id": "a39fb07d-f42d-4dfa-9209-cee3193d59cc",
+      "id": "896643da-6558-42b3-94f7-9a0387d3f7b9",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        880,
-        592
+        -928,
+        4000
       ],
       "typeVersion": 1
-    },
-    {
-      "parameters": {
-        "messages": {
-          "messageValues": [
-            {
-              "message": "Tu es une agence de service informatique. Une agence Française. Tu as 3 types de tarif, tout d'abord l'offre basic "
-            }
-          ]
-        }
-      },
-      "id": "ed0c17ec-ab59-4cc8-995b-911472f887a7",
-      "name": "Chat LLM Chain",
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "position": [
-        2096,
-        128
-      ],
-      "typeVersion": 1.4
     },
     {
       "parameters": {
@@ -73,10 +54,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        2032,
-        336
+        -272,
+        3632
       ],
-      "id": "8452227f-f6c0-4235-839e-64836370497f",
+      "id": "e475d146-3c35-41e5-ba4f-381a3cbd51c5",
       "name": "Ollama Chat Model1",
       "credentials": {
         "ollamaApi": {
@@ -87,29 +68,207 @@
     },
     {
       "parameters": {
+        "jsCode": "const userMessage = $('When chat message received').first().json.chatInput || '';\nconst aiResponse = $input.first().json.output || '';\nconst combined = userMessage + ' ' + aiResponse;\n\nconst emailRegex = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;\nconst phoneRegex = /(?:\\+33|0)[\\s.\\-]?[1-9](?:[\\s.\\-]?\\d{2}){4}/g;\n\nconst emails = combined.match(emailRegex) || [];\nconst phones = combined.match(phoneRegex) || [];\n\nconst isQualified = emails.length > 0 || phones.length > 0;\n\nreturn [{\n  json: {\n    output: aiResponse,\n    isQualified,\n    email: emails[0] || null,\n    phone: phones[0] || null,\n    userMessage,\n    aiResponse,\n    capturedAt: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        3408
+      ],
+      "id": "774c6718-ffc9-4e9d-94a3-9200b4dac1eb",
+      "name": "Extraire infos lead"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-subject",
+              "name": "subject",
+              "value": "=Nouveau lead - {{ $json.email || $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-body",
+              "name": "salesMessage",
+              "value": "=*NOUVEAU LEAD CAPTURÉ*\n\nEmail : {{ $json.email || 'Non renseigné' }}\nTéléphone : {{ $json.phone || 'Non renseigné' }}\nCapturé le : {{ $json.capturedAt }}\n\n---\n*Résumé de la discussion (IA) :*\n{{ $json.aiSummary }}\n\n---\n*Dernier message du prospect :*\n{{ $json.userMessage }}\n\n*Dernière réponse de l'assistant :*\n{{ $json.aiResponse }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-email",
+              "name": "toEmail",
+              "value": "sales@seapalm.fr",
+              "type": "string"
+            }
+          ]
+        },
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2448,
-        128
+        1104,
+        3408
       ],
-      "id": "b1c509c7-0ced-4506-b03d-ad4a1b575add",
-      "name": "Edit Fields"
+      "id": "b889592a-c54b-4908-862e-000e38003781",
+      "name": "Formater message sales"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -144,
+        3632
+      ],
+      "id": "257ffb79-f7f5-46e7-8fb4-a4840b01aa20",
+      "name": "Simple Memory1"
     },
     {
       "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+        "options": {
+          "systemMessage": "Tu es un assistant commercial pour BoisPortes, une agence française spécialisée dans la vente de portes en bois sur mesure. Ton objectif est de qualifier les prospects et de décrocher un rendez-vous avec notre équipe commerciale.\n\nNos 3 gammes :\n- **Gamme Classique** (à partir de 350 €) : portes intérieures en bois massif ou contreplaqué, finition naturelle ou laquée, standards ou sur mesure simple.\n- **Gamme Premium** (à partir de 800 €) : portes en bois noble (chêne, noyer, hêtre), menuiserie travaillée, vitrages possibles, isolation renforcée, pose incluse.\n- **Gamme Sur-Mesure Prestige** (sur devis) : création entièrement personnalisée, essences rares, sculptures et moulures, délai et finition haut de gamme, garantie 10 ans.\n\nTon rôle :\n1. Accueille chaleureusement le prospect en te présentant comme l'assistant BoisPortes.\n2. Identifie son besoin : intérieur ou extérieur, nombre de portes, type de logement, budget approximatif.\n3. Oriente-le vers la gamme la plus adaptée à sa situation.\n4. Collecte ses coordonnées : prénom, nom, adresse email et numéro de téléphone.\n5. Confirme qu'un conseiller BoisPortes le recontactera sous 24h pour affiner le devis.\n\nSois chaleureux, professionnel et concis. Pose une question à la fois. Ne révèle pas que tu es une IA sauf si on te le demande explicitement."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -272,
+        3408
+      ],
+      "id": "d6c4c3e4-b6ee-49a3-a441-ee22532e70f0",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c0f4d463-eeb9-4be1-8424-c26289332dc4",
+              "leftValue": "={{ $json.isQualified }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        3408
+      ],
+      "id": "5f447f8a-0dd8-4613-8c8b-d5410349446f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1499082382102495514/iksY2m0Jv1DwvcTxjWtvRzUo1wkBWh62A4hW-c7JdLfm0jFO6VIm_qt9Uuqmxf1pMavJ",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": {{ JSON.stringify($json.salesMessage) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1328,
+        3312
+      ],
+      "id": "8e7dea33-9b8d-47ff-b9b9-d99b2d194930",
+      "name": "Notifier équipe Sales"
+    },
+    {
+      "parameters": {
+        "jsCode": "const leadData = $('Extraire infos lead').first().json;\nconst ollamaResponse = $input.first().json;\nconst summary = ollamaResponse?.message?.content || '';\n\nreturn [{\n  json: {\n    ...leadData,\n    aiSummary: summary\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2656,
-        128
+        880,
+        3408
       ],
-      "id": "3cc3b7d1-860c-40a2-9102-659d967ee362",
-      "name": "Code in JavaScript"
+      "id": "a8405036-8ff2-45e1-bed5-d51ff2909359",
+      "name": "Enrichir données lead"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Tu es un assistant commercial. À partir du message du prospect et de la réponse de l'assistant, génère un résumé structuré pour l'équipe commerciale. Liste clairement les besoins exprimés en portes (type, quantité, style, usage, budget), les informations de contact, et toute autre information commerciale utile. Sois concis et factuel.\"},     {\"role\": \"user\", \"content\": \"Message du prospect : {{ $json.userMessage }}\\n\\nRéponse de l'assistant : {{ $json.aiResponse }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        528,
+        3408
+      ],
+      "id": "bbb689bd-5233-40d8-a95c-cc5efe49e8a5",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:7b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        608,
+        3632
+      ],
+      "id": "e60a1798-78a8-4565-9565-24ccd9661d62",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "nSuL9YqPyKVMumP3",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3c2f7728-261c-41d1-8444-2829d70fcae5",
+              "name": "text",
+              "value": "={{ $('Extraire infos lead').item.json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        3504
+      ],
+      "id": "f5dda098-6f5f-494f-b3bf-625d6d8a04e4",
+      "name": "Edit Fields"
     }
   ],
   "pinData": {},
@@ -118,7 +277,7 @@
       "main": [
         [
           {
-            "node": "Chat LLM Chain",
+            "node": "AI Agent1",
             "type": "main",
             "index": 0
           }
@@ -129,16 +288,43 @@
       "ai_languageModel": [
         [
           {
-            "node": "Chat LLM Chain",
+            "node": "AI Agent1",
             "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "Chat LLM Chain": {
+    "Extraire infos lead": {
       "main": [
         [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrichir données lead": {
+      "main": [
+        [
+          {
+            "node": "Formater message sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formater message sales": {
+      "main": [
+        [
+          {
+            "node": "Notifier équipe Sales",
+            "type": "main",
+            "index": 0
+          },
           {
             "node": "Edit Fields",
             "type": "main",
@@ -147,12 +333,57 @@
         ]
       ]
     },
-    "Edit Fields": {
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Extraire infos lead",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Enrichir données lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -164,7 +395,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "d4638d32-95aa-4d8a-bb64-a228740f9638",
+  "versionId": "4fe0bdce-ff2b-4872-b41a-9a020c47a39e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "980c24a176fcc37d984f79d7f5f99837e7e8b083813a134c6fe0d2a0c621faf7"
