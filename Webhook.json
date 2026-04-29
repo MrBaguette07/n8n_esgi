@@ -1,0 +1,344 @@
+{
+  "name": "HttpRequest",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -176
+      ],
+      "id": "5bdbdaf1-72fe-42de-b673-bc8bbebedfcd",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "t3zAopWFWHSLzg78",
+          "mode": "list",
+          "cachedResultName": "moi",
+          "cachedResultUrl": "/projects/r6tfXGoCrNkrej0x/datatables/t3zAopWFWHSLzg78"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        -160
+      ],
+      "id": "793eeb24-5102-4fdc-a35d-7c66e80726aa",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body ?? {};\nconst allowed = ['name', 'age', 'source', 'email', 'message'];\nconst extra = Object.keys(body).filter(k => !allowed.includes(k));\n\nlet error = null;\nlet validationErrorCode = null;\nif (body.name === undefined || body.name === null || body.name === '') {\n  error = \"Le champ 'name' est manquant\";\n  validationErrorCode = 405\n}\n\nelse if (body.age === undefined || body.age === null || body.age === '') {\n  error = \"Le champ 'age' est manquant\";\n  validationErrorCode = 400\n}\nelse if (extra.length > 0) {\n  error = `Champs non autorisés :${extra.join(', ')}`;\n  validationErrorCode=403\n}\n\nconst result = { ...$input.item.json };\nif (error) result.validationError = error;\nif (validationErrorCode) result.validationErrorCode = validationErrorCode\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        320
+      ],
+      "id": "b29a348a-504c-42f8-b3f3-e5b5a2b9976d",
+      "name": "Valider champs"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d4e5f6a7-b8c9-0123-def0-456789012345",
+              "leftValue": "={{ $json.validationError }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        320
+      ],
+      "id": "aa1e4610-6778-448d-b0bf-74d78e9435f6",
+      "name": "Champs valides?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ insert: false, error: $json.validationError }) }}",
+        "options": {
+          "responseCode": "={{ $json.validationErrorCode }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1056,
+        592
+      ],
+      "id": "67228a69-8239-4490-8db6-e3329277f78c",
+      "name": "Erreur validation"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "insert-personne",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        464,
+        320
+      ],
+      "id": "d8e442a3-a5d5-4c05-adbd-132fdb39260e",
+      "name": "Webhook1",
+      "webhookId": "8c9adadd-dd76-4fe4-a6ed-e40f38bb7f72"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b8a0b9b-db23-48ed-9861-45da3738795b",
+              "name": "body.isAdult",
+              "value": "={{ $input.item.json.body.age >= 18 }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        176
+      ],
+      "id": "89c1e342-4563-4ef5-9cf4-f81b12403697",
+      "name": "Edit Fields",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "t3zAopWFWHSLzg78",
+          "mode": "list",
+          "cachedResultName": "moi",
+          "cachedResultUrl": "/projects/r6tfXGoCrNkrej0x/datatables/t3zAopWFWHSLzg78"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        176
+      ],
+      "id": "171e9a14-3099-4bee-9199-baab6882d68f",
+      "name": "Insert row1",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"insert\": \"true\"\n}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1712,
+        320
+      ],
+      "id": "9ec06b07-f409-40e6-836d-2bf8e6a26477",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fa8eb83b-444f-48e5-ab28-03aa6a70c589",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1424,
+        176
+      ],
+      "id": "2d256e9d-36c8-4620-850c-cf00a7381d41",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ insert: false, error: $json.error?.message ?? 'Erreur inconnue' }) }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1712,
+        544
+      ],
+      "id": "07355eec-c39c-4710-9358-04ccb1295b08",
+      "name": "Erreur1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valider champs": {
+      "main": [
+        [
+          {
+            "node": "Champs valides?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Champs valides?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Erreur validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Valider champs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Insert row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Erreur1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5a45fc27-1d0f-4fce-8214-3822c2e40aad",
+  "meta": {
+    "instanceId": "980c24a176fcc37d984f79d7f5f99837e7e8b083813a134c6fe0d2a0c621faf7"
+  },
+  "id": "hMk1w2i4UF7sfziJ",
+  "tags": []
+}
